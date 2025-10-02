@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spread Insight Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@latest/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            margin: 0;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1600px;
+            height: 95vh;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                height: auto;
+                min-height: 95vh;
+            }
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                max-width: 100%;
+                border-radius: 12px;
+                height: 85vh;
+            }
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            flex: 1;
+            padding: 30px;
+            display: none;
+            flex-direction: column;
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                display: none !important;
+            }
+        }
+
+        .chart-container.visible {
+            display: flex;
+        }
+
+        .chart-header {
+            margin-bottom: 20px;
+        }
+
+        .chart-header h3 {
+            font-size: 24px;
+            color: #1e3a8a;
+            margin-bottom: 5px;
+        }
+
+        .chart-header p {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        #chart {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .chat-header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-container {
+            margin-bottom: 8px;
+        }
+
+        .chat-header h2 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .chat-header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .chat-header {
+                padding: 16px;
+            }
+            
+            .logo-container svg {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .chat-header h2 {
+                font-size: 20px;
+            }
+            
+            .chat-header p {
+                font-size: 12px;
+            }
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        @media (max-width: 768px) {
+            .chat-messages {
+                padding: 15px;
+            }
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .message-content {
+                max-width: 90%;
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 13px;
+            overflow-x: auto;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .message-content table {
+                font-size: 11px;
+            }
+        }
+
+        .message-content th,
+        .message-content td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .message-content th {
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #1e3a8a;
+        }
+
+        .message-content tr:last-child td {
+            border-bottom: none;
+        }
+
+        .message-content strong {
+            color: #1e3a8a;
+        }
+
+        .message-content ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .message-content li {
+            margin: 8px 0;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            width: fit-content;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .typing-indicator.active {
+            display: block;
+        }
+
+        .typing-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #3b82f6;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .controls {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                padding: 12px;
+            }
+        }
+
+        button {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            button {
+                padding: 10px 24px;
+                font-size: 13px;
+            }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="chat-header-content">
+                    <div class="logo-container">
+                        <svg width="36" height="36" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g clip-path="url(#clip0_1_16)">
+                                <rect width="72" height="72" rx="8" fill="#198CFF"></rect>
+                                <path d="M37.3047 28.6527C37.1115 26.9382 36.3146 25.6101 34.9141 24.6683C33.5135 23.7145 31.7507 23.2376 29.6257 23.2376C28.1044 23.2376 26.7884 23.479 25.6776 23.962C24.5668 24.4329 23.7035 25.0849 23.0877 25.918C22.484 26.739 22.1822 27.6747 22.1822 28.7251C22.1822 29.6065 22.3874 30.3672 22.7979 31.0071C23.2205 31.647 23.7699 32.1843 24.446 32.619C25.1342 33.0415 25.8707 33.3977 26.6555 33.6875C27.4403 33.9652 28.195 34.1946 28.9194 34.3757L32.5415 35.3175C33.7248 35.6072 34.9382 35.9996 36.1818 36.4947C37.4254 36.9897 38.5785 37.6417 39.641 38.4506C40.7035 39.2596 41.5607 40.2617 42.2127 41.457C42.8768 42.6523 43.2088 44.0831 43.2088 45.7493C43.2088 47.8501 42.6655 49.7156 41.5788 51.3455C40.5043 52.9755 38.9407 54.2614 36.8881 55.2031C34.8477 56.1449 32.3786 56.6158 29.4808 56.6158C26.7038 56.6158 24.3011 56.1751 22.2727 55.2937C20.2443 54.4123 18.6566 53.1626 17.5096 51.5447C16.3626 49.9148 15.7287 47.983 15.608 45.7493H21.2223C21.331 47.0895 21.7656 48.2063 22.5263 49.0998C23.299 49.9812 24.283 50.6392 25.4783 51.0739C26.6857 51.4964 28.0078 51.7077 29.4446 51.7077C31.0263 51.7077 32.4329 51.4602 33.6644 50.9652C34.908 50.4581 35.886 49.7578 36.5984 48.8643C37.3107 47.9588 37.6669 46.9023 37.6669 45.695C37.6669 44.5962 37.353 43.6967 36.7251 42.9964C36.1094 42.2962 35.2702 41.7166 34.2077 41.2578C33.1573 40.799 31.968 40.3945 30.6399 40.0444L26.2571 38.8491C23.2869 38.0401 20.9325 36.8509 19.1939 35.2812C17.4673 33.7116 16.604 31.6349 16.604 29.0511C16.604 26.9141 17.1836 25.0486 18.3427 23.4549C19.5018 21.8611 21.0714 20.6236 23.0515 19.7422C25.0316 18.8487 27.2653 18.402 29.7525 18.402C32.2638 18.402 34.4794 18.8427 36.3991 19.7241C38.331 20.6055 39.8523 21.8189 40.9631 23.3643C42.0739 24.8977 42.6534 26.6605 42.7017 28.6527H37.3047ZM49.7166 56V28.1818H55.1317V56H49.7166ZM52.4513 23.8896C51.5095 23.8896 50.7006 23.5756 50.0244 22.9478C49.3604 22.3079 49.0283 21.5472 49.0283 20.6658C49.0283 19.7724 49.3604 19.0117 50.0244 18.3839C50.7006 17.744 51.5095 17.424 52.4513 17.424C53.3931 17.424 54.196 17.744 54.86 18.3839C55.5362 19.0117 55.8742 19.7724 55.8742 20.6658C55.8742 21.5472 55.5362 22.3079 54.86 22.9478C54.196 23.5756 53.3931 23.8896 52.4513 23.8896Z" fill="white"></path>
+                            </g>
+                            <defs>
+                                <clipPath id="clip0_1_16">
+                                    <rect width="72" height="72" rx="8" fill="white"></rect>
+                                </clipPath>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h2>Spread Insight</h2>
+                    <p>Интеллектуальный анализ арбитражных возможностей</p>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="typing-indicator" id="typingIndicator">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn-primary" id="nextBtn">▶ Далее</button>
+                <button class="btn-secondary" id="restartBtn">↻ Заново</button>
+            </div>
+        </div>
+
+        <div class="chart-container" id="chartContainer">
+            <div class="chart-header">
+                <h3>График спреда FXGD – TGLD</h3>
+                <p>Отклонение цен за последний месяц (часовые свечи)</p>
+            </div>
+            <div id="chart"></div>
+        </div>
+    </div>
+
+    <script>
+        const messages = [
+            { type: 'ai', text: 'Привет, под какую торговую идею хочешь подобрать пары инструментов?' },
+            { type: 'user', text: 'Какими инструментами можно арбитражить цену на золото?' },
+            { 
+                type: 'ai', 
+                text: `Наиболее ликвидные арбитражные пары по золоту:
+
+<strong>Межвалютный (с кросс-курсом):</strong>
+<ul>
+<li><strong>MOEX GOLD фьючерс (RUB)</strong> ↔ <strong>CME Gold (USD)</strong> ↔ через курс USD/RUB</li>
+<li><strong>FXGD (RUB ETF)</strong> ↔ <strong>GLD (NYSE, USD ETF)</strong> ↔ через курс USD/RUB</li>
+</ul>
+
+<strong>Межрынковый:</strong>
+<ul>
+<li><strong>CME Gold Futures (USD)</strong> ↔ <strong>GLD ETF (USD)</strong> (обычно очень близко, но могут быть расхождения)</li>
+<li><strong>CME Gold Futures (USD)</strong> ↔ <strong>PAXG/XAUT (крипта, USD-деноминированные)</strong></li>
+<li><strong>GLD ETF (USD)</strong> ↔ <strong>PAXG/XAUT (USD)</strong></li>
+</ul>
+
+<strong>Межвалютный + межрынковый:</strong>
+<ul>
+<li><strong>MOEX FXGD (RUB)</strong> ↔ <strong>PAXG (USD, Binance/Kraken)</strong> через USD/RUB</li>
+<li><strong>MOEX GOLD (RUB futures)</strong> ↔ <strong>XAUT (USD, Bitfinex)</strong> через USD/RUB</li>
+</ul>
+
+Еще есть много пар с ETF и ПИФами, но они менее ликвидные. Вывести все пары с указанием ликвидности и размером отклонений?` 
+            },
+            { type: 'user', text: 'Выведи пары которые можно собрать на MOEX' },
+            { 
+                type: 'ai', 
+                text: `Арбитражные пары золота на MOEX:
+
+<table>
+<tr>
+<th>Пара тикеров</th>
+<th>Ликвидность</th>
+<th>Оценка отклонения</th>
+<th>Комментарий</th>
+</tr>
+<tr>
+<td><strong>FXGD – GOLD</strong></td>
+<td>Низкая – Средняя</td>
+<td>~1–2%</td>
+<td>FXGD завязан на иностранный траст, ликвидность слабая; GOLD ориентирован на локальный рынок. Разница в структуре и комиссиях может давать расхождения.</td>
+</tr>
+<tr>
+<td><strong>FXGD – TGLD</strong></td>
+<td>Низкая – Средняя</td>
+<td>~1–1.5%</td>
+<td>Оба фонда на золото, но с разной структурой (FXGD через зарубежные активы, TGLD через MOEX/IAU). Возможны расхождения в неблагоприятные периоды.</td>
+</tr>
+<tr>
+<td><strong>GOLD – TGLD</strong></td>
+<td>Средняя – Средняя</td>
+<td>~0.5–1%</td>
+<td>Два российских фонда на золото, оба в рублях. Отклонения меньше, чем с FXGD, но возможны на фоне разницы в комиссиях и слежении за бенчмарком.</td>
+</tr>
+<tr>
+<td><strong>GOLD – GLDRUB_TOM</strong></td>
+<td>Средняя – Средняя</td>
+<td>~1–2%</td>
+<td>GOLD как фонд vs физический рынок золота в граммах. Возможны премии/дисконты в зависимости от ликвидности на рынке металлов.</td>
+</tr>
+<tr>
+<td><strong>TGLD – GLDRUB_TOM</strong></td>
+<td>Средняя – Средняя</td>
+<td>~1–2%</td>
+<td>ETF на золото против спот-рынка золота в граммах. Иногда расхождения из-за ограничений на спот-рынке и комиссий фонда.</td>
+</tr>
+</table>
+
+Хочешь покажу график спреда по одному из этих инструментов?` 
+            },
+            { type: 'user', text: 'Да, покажи по FXGD – TGLD' },
+            { type: 'ai', text: 'График спреда FXGD – TGLD за последний месяц:', isImage: true },
+            { type: 'ai', text: 'Хочешь оценим сколько можно вложить в сделку и сколько заработать при типичном отклонении?' },
+            { type: 'user', text: 'Да, давай для капитала в 500 тр' },
+            { 
+                type: 'ai', 
+                text: `Вот оценка арбитражной сделки по FXGD – TGLD для отклонения 1,5%:
+
+<ul>
+<li><strong>Отклонение:</strong> 1.5% = 7 500₽ потенциальной прибыли</li>
+<li><strong>Проскальзывание:</strong> ~0.3% (1 500₽)</li>
+<li><strong>Спред:</strong> ~0.2% на вход и выход (2 000₽)</li>
+<li><strong>Комиссии биржи/брокера:</strong> ~0.05% (250₽)</li>
+<li><strong>Итого чистыми за сделку:</strong> ~3 750₽</li>
+<li><strong>Средний срок удержания сделки:</strong> 1–2 недели (пока отклонение схлопнется)</li>
+<li><strong>В год (25–30 циклов):</strong> ~90–110 тыс ₽ (18–22% годовых)</li>
+</ul>
+
+Хочешь, настрою оповещение, которое придет к тебе, когда спред этой пары отклониться на 1.5%?` 
+            },
+            { type: 'user', text: 'Да, давай' },
+            { type: 'ai', text: '✅ Оповещение по паре FXGD – TGLD на отклонение в 1.5% активировано!' }
+        ];
+
+        let currentMessageIndex = 0;
+        let chart = null;
+        let chartData = [];
+
+        const chatMessages = document.getElementById('chatMessages');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const nextBtn = document.getElementById('nextBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const chartContainer = document.getElementById('chartContainer');
+
+        async function fetchBinanceData() {
+            try {
+                const endTime = Date.now();
+                const startTime = endTime - (30 * 24 * 60 * 60 * 1000);
+                
+                const [spotResponse, perpResponse] = await Promise.all([
+                    fetch(`https://api.binance.com/api/v3/klines?symbol=ENAUSDT&interval=1h&startTime=${startTime}&endTime=${endTime}&limit=720`),
+                    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=ENAUSDT&interval=1h&startTime=${startTime}&endTime=${endTime}&limit=720`)
+                ]);
+
+                const spotData = await spotResponse.json();
+                const perpData = await perpResponse.json();
+
+                chartData = spotData.map((spot, i) => {
+                    if (!perpData[i]) return null;
+                    
+                    const spotClose = parseFloat(spot[4]);
+                    const perpClose = parseFloat(perpData[i][4]);
+                    const spread = ((spotClose / perpClose - 1) * 100).toFixed(4);
+                    
+                    return {
+                        time: Math.floor(spot[0] / 1000),
+                        value: parseFloat(spread)
+                    };
+                }).filter(item => item !== null);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                chartData = generateFallbackData();
+            }
+        }
+
+        function generateFallbackData() {
+            const data = [];
+            const now = Math.floor(Date.now() / 1000);
+            const hoursInMonth = 30 * 24;
+            
+            for (let i = hoursInMonth; i >= 0; i--) {
+                const time = now - (i * 3600);
+                const baseSpread = 1.2;
+                const variation = Math.sin(i / 48) * 0.4 + Math.random() * 0.3 - 0.15;
+                data.push({
+                    time: time,
+                    value: parseFloat((baseSpread + variation).toFixed(4))
+                });
+            }
+            return data;
+        }
+
+        function createChart() {
+            const chartElement = document.getElementById('chart');
+            
+            // Проверяем доступность библиотеки
+            const LWC = window.LightweightCharts || window.lightweightCharts;
+            if (!LWC) {
+                console.error('LightweightCharts not loaded');
+                chartElement.innerHTML = '<p style="padding: 20px; text-align: center;">График загружается...</p>';
+                return;
+            }
+            
+            chart = LWC.createChart(chartElement, {
+                layout: {
+                    background: { type: 'solid', color: '#ffffff' },
+                    textColor: '#333',
+                },
+                grid: {
+                    vertLines: { color: '#f0f0f0' },
+                    horzLines: { color: '#f0f0f0' },
+                },
+                width: chartElement.clientWidth,
+                height: chartElement.clientHeight,
+                timeScale: {
+                    timeVisible: true,
+                    secondsVisible: false,
+                }
+            });
+
+            const lineSeries = chart.addSeries(LWC.LineSeries, {
+                color: '#3b82f6',
+                lineWidth: 2,
+            });
+
+            lineSeries.setData(chartData);
+            chart.timeScale().fitContent();
+
+            window.addEventListener('resize', () => {
+                chart.applyOptions({ 
+                    width: chartElement.clientWidth,
+                    height: chartElement.clientHeight 
+                });
+            });
+        }
+
+        function showTypingIndicator() {
+            typingIndicator.classList.add('active');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.classList.remove('active');
+        }
+
+        function addMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.type}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            if (message.isImage) {
+                contentDiv.innerHTML = message.text;
+                
+                const img = document.createElement('img');
+                img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YwZjlmZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiMwMzY5YTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj7Qk9GA0LDRhNC40Log0YHQv9GA0LXQtNCwIEZYR0Qg4oCTIFRHTEQ8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI1NSUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY0NzQ4YiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+0J7RgtC60LvQvtC90LXQvdC40LUg0YbQtdC9INC30LAg0L/QvtGB0LvQtdC00L3QuNC5INC80LXRgdGP0YY8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI2NSUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzk0YTNiOCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+KNGH0LDRgdC+0LLRi9C1INGB0LLQtdGH0LgpPC90ZXh0Pjwvc3ZnPg==';
+                img.alt = 'График спреда FXGD – TGLD';
+                img.style.cssText = 'width: 100%; max-width: 450px; border-radius: 12px; margin-top: 10px; display: block;';
+                
+                contentDiv.appendChild(img);
+            } else {
+                contentDiv.innerHTML = message.text;
+            }
+            
+            messageDiv.appendChild(contentDiv);
+            chatMessages.insertBefore(messageDiv, typingIndicator);
+            
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 100);
+        }
+
+        async function showNextMessage() {
+            if (currentMessageIndex >= messages.length) {
+                nextBtn.textContent = '✓ Завершено';
+                nextBtn.disabled = true;
+                return;
+            }
+
+            nextBtn.disabled = true;
+
+            const message = messages[currentMessageIndex];
+            
+            // Если это вопрос пользователя
+            if (message.type === 'user') {
+                addMessage(message);
+                currentMessageIndex++;
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                // Проверяем, есть ли следующее сообщение (ответ ИИ)
+                if (currentMessageIndex < messages.length && messages[currentMessageIndex].type === 'ai') {
+                    showTypingIndicator();
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    hideTypingIndicator();
+                    
+                    const aiMessage = messages[currentMessageIndex];
+                    addMessage(aiMessage);
+                    
+                    if (aiMessage.showChart) {
+                        setTimeout(() => {
+                            chartContainer.classList.add('visible');
+                            if (!chart) {
+                                createChart();
+                            }
+                        }, 500);
+                    }
+                    
+                    currentMessageIndex++;
+                }
+            } 
+            // Если это первое сообщение ИИ (приветствие)
+            else if (message.type === 'ai') {
+                showTypingIndicator();
+                await new Promise(resolve => setTimeout(resolve, 1200));
+                hideTypingIndicator();
+                addMessage(message);
+                currentMessageIndex++;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            nextBtn.disabled = false;
+            
+            if (currentMessageIndex >= messages.length) {
+                nextBtn.textContent = '✓ Завершено';
+                nextBtn.disabled = true;
+            }
+        }
+
+        function restart() {
+            currentMessageIndex = 0;
+            chatMessages.innerHTML = '<div class="typing-indicator" id="typingIndicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+            nextBtn.textContent = '▶ Далее';
+            nextBtn.disabled = false;
+            chartContainer.classList.remove('visible');
+            if (chart) {
+                chart.remove();
+                chart = null;
+            }
+        }
+
+        nextBtn.addEventListener('click', showNextMessage);
+        restartBtn.addEventListener('click', restart);
+
+        fetchBinanceData();
+    </script>
+</body>
+</html>
